@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Callable
 
 import httpx
 
@@ -15,7 +15,7 @@ class BaseLlmConfig(ABC):
         self,
         model: Optional[Union[str, Dict]] = None,
         temperature: float = 0.1,
-        api_key: Optional[str] = None,
+        api_key: Optional[Union[str, Callable[[], str]]] = None,
         max_tokens: int = 2000,
         top_p: float = 0.1,
         top_k: int = 1,
@@ -59,8 +59,8 @@ class BaseLlmConfig(ABC):
         :param temperature:  Controls the randomness of the model's output.
         Higher values (closer to 1) make output more random, lower values make it more deterministic, defaults to 0
         :type temperature: float, optional
-        :param api_key: OpenAI API key to be use, defaults to None
-        :type api_key: Optional[str], optional
+        :param api_key: OpenAI API key to be use, can be a string or a callable that returns a string, defaults to None
+        :type api_key: Optional[Union[str, Callable[[], str]]], optional
         :param max_tokens: Controls how many tokens are generated, defaults to 2000
         :type max_tokens: int, optional
         :param top_p: Controls the diversity of words. Higher values (closer to 1) make word selection more diverse,
@@ -102,6 +102,12 @@ class BaseLlmConfig(ABC):
         :type lmstudio_response_format: Optional[Dict], optional
         :param vllm_base_url: vLLM base URL to be use, defaults to "http://localhost:8000/v1"
         :type vllm_base_url: Optional[str], optional
+        :param aws_access_key_id: AWS access key ID, defaults to None
+        :type aws_access_key_id: Optional[str], optional
+        :param aws_secret_access_key: AWS secret access key, defaults to None
+        :type aws_secret_access_key: Optional[str], optional
+        :param aws_region: AWS region, defaults to "us-west-2"
+        :type aws_region: Optional[str], optional
         """
 
         self.model = model
@@ -150,3 +156,18 @@ class BaseLlmConfig(ABC):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_region = aws_region
+
+    def get_api_key(self) -> Optional[str]:
+        """
+        Resolve the API key, handling both string and callable values.
+        
+        Returns:
+            Optional[str]: The resolved API key string, or None if not available
+        """
+        if self.api_key is None:
+            return None
+        
+        if callable(self.api_key):
+            return self.api_key()
+        else:
+            return self.api_key

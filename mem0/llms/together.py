@@ -19,7 +19,7 @@ class TogetherLLM(LLMBase):
         if not self.config.model:
             self.config.model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
-        api_key = self.config.api_key or os.getenv("TOGETHER_API_KEY")
+        api_key = self.config.get_api_key() or os.getenv("TOGETHER_API_KEY")
         self.client = Together(api_key=api_key)
 
     def _parse_response(self, response, tools):

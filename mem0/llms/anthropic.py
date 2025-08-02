@@ -17,7 +17,7 @@ class AnthropicLLM(LLMBase):
         if not self.config.model:
             self.config.model = "claude-3-5-sonnet-20240620"
 
-        api_key = self.config.api_key or os.getenv("ANTHROPIC_API_KEY")
+        api_key = self.config.get_api_key() or os.getenv("ANTHROPIC_API_KEY")
         self.client = anthropic.Anthropic(api_key=api_key)
 
     def generate_response(

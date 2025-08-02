@@ -16,7 +16,7 @@ class SarvamLLM(LLMBase):
             self.config.model = "sarvam-m"
 
         # Get API key from config or environment variable
-        self.api_key = self.config.api_key or os.getenv("SARVAM_API_KEY")
+        self.api_key = self.config.get_api_key() or os.getenv("SARVAM_API_KEY")
 
         if not self.api_key:
             raise ValueError(

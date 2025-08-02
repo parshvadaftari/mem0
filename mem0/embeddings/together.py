@@ -12,7 +12,7 @@ class TogetherEmbedding(EmbeddingBase):
         super().__init__(config)
 
         self.config.model = self.config.model or "togethercomputer/m2-bert-80M-8k-retrieval"
-        api_key = self.config.api_key or os.getenv("TOGETHER_API_KEY")
+        api_key = self.config.get_api_key() or os.getenv("TOGETHER_API_KEY")
         # TODO: check if this is correct
         self.config.embedding_dims = self.config.embedding_dims or 768
         self.client = Together(api_key=api_key)

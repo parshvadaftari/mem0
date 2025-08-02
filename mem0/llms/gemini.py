@@ -18,7 +18,7 @@ class GeminiLLM(LLMBase):
         if not self.config.model:
             self.config.model = "gemini-2.0-flash"
 
-        api_key = self.config.api_key or os.getenv("GOOGLE_API_KEY")
+        api_key = self.config.get_api_key() or os.getenv("GOOGLE_API_KEY")
         self.client = genai.Client(api_key=api_key)
 
     def _parse_response(self, response, tools):

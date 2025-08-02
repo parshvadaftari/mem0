@@ -14,9 +14,9 @@ class LMStudioLLM(LLMBase):
             self.config.model
             or "lmstudio-community/Meta-Llama-3.1-70B-Instruct-GGUF/Meta-Llama-3.1-70B-Instruct-IQ2_M.gguf"
         )
-        self.config.api_key = self.config.api_key or "lm-studio"
-
-        self.client = OpenAI(base_url=self.config.lmstudio_base_url, api_key=self.config.api_key)
+        self.config.api_key = self.config.get_api_key() or "lm-studio"
+        base_url = self.config.lmstudio_base_url or "http://localhost:1234/v1"
+        self.client = OpenAI(base_url=base_url, api_key=self.config.api_key)
 
     def generate_response(
         self,

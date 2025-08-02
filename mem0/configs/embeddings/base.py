@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Callable
 
 import httpx
 
@@ -14,7 +14,7 @@ class BaseEmbedderConfig(ABC):
     def __init__(
         self,
         model: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_key: Optional[Union[str, Callable[[], str]]] = None,
         embedding_dims: Optional[int] = None,
         # Ollama specific
         ollama_base_url: Optional[str] = None,
@@ -45,8 +45,8 @@ class BaseEmbedderConfig(ABC):
 
         :param model: Embedding model to use, defaults to None
         :type model: Optional[str], optional
-        :param api_key: API key to be use, defaults to None
-        :type api_key: Optional[str], optional
+        :param api_key: API key to be use, can be a string or a callable that returns a string, defaults to None
+        :type api_key: Optional[Union[str, Callable[[], str]]], optional
         :param embedding_dims: The number of dimensions in the embedding, defaults to None
         :type embedding_dims: Optional[int], optional
         :param ollama_base_url: Base URL for the Ollama API, defaults to None
@@ -71,6 +71,12 @@ class BaseEmbedderConfig(ABC):
         :type memory_search_embedding_type: Optional[str], optional
         :param lmstudio_base_url: LM Studio base URL to be use, defaults to "http://localhost:1234/v1"
         :type lmstudio_base_url: Optional[str], optional
+        :param aws_access_key_id: AWS access key ID, defaults to None
+        :type aws_access_key_id: Optional[str], optional
+        :param aws_secret_access_key: AWS secret access key, defaults to None
+        :type aws_secret_access_key: Optional[str], optional
+        :param aws_region: AWS region, defaults to "us-west-2"
+        :type aws_region: Optional[str], optional
         """
 
         self.model = model
@@ -106,3 +112,18 @@ class BaseEmbedderConfig(ABC):
         self.aws_access_key_id = aws_access_key_id
         self.aws_secret_access_key = aws_secret_access_key
         self.aws_region = aws_region
+
+    def get_api_key(self) -> Optional[str]:
+        """
+        Resolve the API key, handling both string and callable values.
+        
+        Returns:
+            Optional[str]: The resolved API key string, or None if not available
+        """
+        if self.api_key is None:
+            return None
+        
+        if callable(self.api_key):
+            return self.api_key()
+        else:
+            return self.api_key

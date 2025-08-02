@@ -25,7 +25,7 @@ class OpenAILLM(LLMBase):
                 or "https://openrouter.ai/api/v1",
             )
         else:
-            api_key = self.config.api_key or os.getenv("OPENAI_API_KEY")
+            api_key = self.config.get_api_key() or os.getenv("OPENAI_API_KEY")
             base_url = (
                 self.config.openai_base_url
                 or os.getenv("OPENAI_API_BASE")
