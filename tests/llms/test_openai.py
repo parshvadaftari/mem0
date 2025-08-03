@@ -19,16 +19,22 @@ def test_openai_llm_base_url():
     # case1: default config: with openai official base url
     config = BaseLlmConfig(model="gpt-4o", temperature=0.7, max_tokens=100, top_p=1.0, api_key="api_key")
     llm = OpenAILLM(config)
+    
+    # Trigger client creation by calling _get_client
+    client = llm._get_client()
     # Note: openai client will parse the raw base_url into a URL object, which will have a trailing slash
-    assert str(llm.client.base_url) == "https://api.openai.com/v1/"
+    assert str(client.base_url) == "https://api.openai.com/v1/"
 
     # case2: with env variable OPENAI_API_BASE
     provider_base_url = "https://api.provider.com/v1"
     os.environ["OPENAI_API_BASE"] = provider_base_url
     config = BaseLlmConfig(model="gpt-4o", temperature=0.7, max_tokens=100, top_p=1.0, api_key="api_key")
     llm = OpenAILLM(config)
+    
+    # Trigger client creation by calling _get_client
+    client = llm._get_client()
     # Note: openai client will parse the raw base_url into a URL object, which will have a trailing slash
-    assert str(llm.client.base_url) == provider_base_url + "/"
+    assert str(client.base_url) == provider_base_url + "/"
 
     # case3: with config.openai_base_url
     config_base_url = "https://api.config.com/v1"
@@ -36,8 +42,11 @@ def test_openai_llm_base_url():
         model="gpt-4o", temperature=0.7, max_tokens=100, top_p=1.0, api_key="api_key", openai_base_url=config_base_url
     )
     llm = OpenAILLM(config)
+    
+    # Trigger client creation by calling _get_client
+    client = llm._get_client()
     # Note: openai client will parse the raw base_url into a URL object, which will have a trailing slash
-    assert str(llm.client.base_url) == config_base_url + "/"
+    assert str(client.base_url) == config_base_url + "/"
 
 
 def test_generate_response_without_tools(mock_openai_client):

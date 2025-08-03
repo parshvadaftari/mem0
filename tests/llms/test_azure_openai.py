@@ -117,8 +117,17 @@ def test_generate_with_http_proxies(default_headers):
             azure_kwargs=azure_kwargs,
         )
 
-        _ = AzureOpenAILLM(config)
+        llm = AzureOpenAILLM(config)
+        
+        # Trigger client creation by calling generate_response
+        messages = [{"role": "user", "content": "test"}]
+        mock_response = Mock()
+        mock_response.choices = [Mock(message=Mock(content="test response"))]
+        mock_azure_openai.return_value.chat.completions.create.return_value = mock_response
+        
+        llm.generate_response(messages)
 
+        # Now verify the client was created with correct parameters
         mock_azure_openai.assert_called_once_with(
             api_key="test",
             http_client=mock_http_client_instance,

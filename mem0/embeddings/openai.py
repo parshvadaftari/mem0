@@ -15,8 +15,8 @@ class OpenAIEmbedding(EmbeddingBase):
         self.config.model = self.config.model or "text-embedding-3-small"
         self.config.embedding_dims = self.config.embedding_dims or 1536
 
-        api_key = self.config.get_api_key() or os.getenv("OPENAI_API_KEY")
-        base_url = (
+        # Store config for lazy API key resolution
+        self._base_url = (
             self.config.openai_base_url
             or os.getenv("OPENAI_API_BASE")
             or os.getenv("OPENAI_BASE_URL")
@@ -29,7 +29,10 @@ class OpenAIEmbedding(EmbeddingBase):
                 DeprecationWarning,
             )
 
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+    def _get_client(self):
+        """Get a fresh client with current API key"""
+        api_key = self.config.get_api_key() or os.getenv("OPENAI_API_KEY")
+        return OpenAI(api_key=api_key, base_url=self._base_url)
 
     def embed(self, text, memory_action: Optional[Literal["add", "search", "update"]] = None):
         """
@@ -42,8 +45,9 @@ class OpenAIEmbedding(EmbeddingBase):
             list: The embedding vector.
         """
         text = text.replace("\n", " ")
+        client = self._get_client()
         return (
-            self.client.embeddings.create(input=[text], model=self.config.model, dimensions=self.config.embedding_dims)
+            client.embeddings.create(input=[text], model=self.config.model, dimensions=self.config.embedding_dims)
             .data[0]
             .embedding
         )

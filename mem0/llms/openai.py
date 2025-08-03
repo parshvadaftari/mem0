@@ -17,16 +17,17 @@ class OpenAILLM(LLMBase):
         if not self.config.model:
             self.config.model = "gpt-4o-mini"
 
+        # Store config for lazy API key resolution
         if os.environ.get("OPENROUTER_API_KEY"):  # Use OpenRouter
-            self.client = OpenAI(
-                api_key=os.environ.get("OPENROUTER_API_KEY"),
-                base_url=self.config.openrouter_base_url
+            self._use_openrouter = True
+            self._base_url = (
+                self.config.openrouter_base_url
                 or os.getenv("OPENROUTER_API_BASE")
-                or "https://openrouter.ai/api/v1",
+                or "https://openrouter.ai/api/v1"
             )
         else:
-            api_key = self.config.get_api_key() or os.getenv("OPENAI_API_KEY")
-            base_url = (
+            self._use_openrouter = False
+            self._base_url = (
                 self.config.openai_base_url
                 or os.getenv("OPENAI_API_BASE")
                 or os.getenv("OPENAI_BASE_URL")
@@ -39,7 +40,16 @@ class OpenAILLM(LLMBase):
                     DeprecationWarning,
                 )
 
-            self.client = OpenAI(api_key=api_key, base_url=base_url)
+    def _get_client(self):
+        """Get a fresh client with current API key"""
+        if self._use_openrouter:
+            return OpenAI(
+                api_key=os.environ.get("OPENROUTER_API_KEY"),
+                base_url=self._base_url,
+            )
+        else:
+            api_key = self.config.get_api_key() or os.getenv("OPENAI_API_KEY")
+            return OpenAI(api_key=api_key, base_url=self._base_url)
 
     def _parse_response(self, response, tools):
         """
@@ -90,6 +100,8 @@ class OpenAILLM(LLMBase):
         Returns:
             json: The generated response.
         """
+        client = self._get_client()
+        
         params = {
             "model": self.config.model,
             "messages": messages,
@@ -120,5 +132,5 @@ class OpenAILLM(LLMBase):
             params["tools"] = tools
             params["tool_choice"] = tool_choice
 
-        response = self.client.chat.completions.create(**params)
+        response = client.chat.completions.create(**params)
         return self._parse_response(response, tools)

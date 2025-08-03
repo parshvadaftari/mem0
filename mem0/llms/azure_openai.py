@@ -17,19 +17,23 @@ class AzureOpenAILLM(LLMBase):
         if not self.config.model:
             self.config.model = "gpt-4o"
 
-        api_key = self.config.azure_kwargs.api_key or os.getenv("LLM_AZURE_OPENAI_API_KEY")
-        azure_deployment = self.config.azure_kwargs.azure_deployment or os.getenv("LLM_AZURE_DEPLOYMENT")
-        azure_endpoint = self.config.azure_kwargs.azure_endpoint or os.getenv("LLM_AZURE_ENDPOINT")
-        api_version = self.config.azure_kwargs.api_version or os.getenv("LLM_AZURE_API_VERSION")
-        default_headers = self.config.azure_kwargs.default_headers
+        # Store config for lazy API key resolution
+        self._azure_deployment = self.config.azure_kwargs.azure_deployment or os.getenv("LLM_AZURE_DEPLOYMENT")
+        self._azure_endpoint = self.config.azure_kwargs.azure_endpoint or os.getenv("LLM_AZURE_ENDPOINT")
+        self._api_version = self.config.azure_kwargs.api_version or os.getenv("LLM_AZURE_API_VERSION")
+        self._default_headers = self.config.azure_kwargs.default_headers
+        self._http_client = self.config.http_client
 
-        self.client = AzureOpenAI(
-            azure_deployment=azure_deployment,
-            azure_endpoint=azure_endpoint,
-            api_version=api_version,
+    def _get_client(self):
+        """Get a fresh client with current API key"""
+        api_key = self.config.azure_kwargs.api_key or os.getenv("LLM_AZURE_OPENAI_API_KEY")
+        return AzureOpenAI(
+            azure_deployment=self._azure_deployment,
+            azure_endpoint=self._azure_endpoint,
+            api_version=self._api_version,
             api_key=api_key,
-            http_client=self.config.http_client,
-            default_headers=default_headers,
+            http_client=self._http_client,
+            default_headers=self._default_headers,
         )
 
     def _parse_response(self, response, tools):
@@ -81,6 +85,7 @@ class AzureOpenAILLM(LLMBase):
         Returns:
             str: The generated response.
         """
+        client = self._get_client()
 
         user_prompt = messages[-1]["content"]
 
@@ -108,5 +113,5 @@ class AzureOpenAILLM(LLMBase):
             params["tools"] = tools
             params["tool_choice"] = tool_choice
 
-        response = self.client.chat.completions.create(**params)
+        response = client.chat.completions.create(**params)
         return self._parse_response(response, tools)
